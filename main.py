@@ -1,5 +1,8 @@
+import csv
+import io
 import json
 import os
+import pprint
 import shutil
 import subprocess
 
@@ -28,7 +31,7 @@ def log(tmp_dir):
     try:
         start = f'--after="{get_start()}'
         end = f'--before="{get_end()}'
-        log_format = '--pretty=format:\'%h,"%s",%ad\''
+        log_format = '--pretty=format:%h,"%s",%ad'
         date_format = '--date=short'
         result = subprocess.run(
             ['git', 'log', start, end, log_format, date_format],
@@ -37,7 +40,14 @@ def log(tmp_dir):
             text=True,
             check=True,
         )
-        print(result.stdout)
+        csv_data = result.stdout
+        f = io.StringIO(csv_data)
+        csv_reader = csv.reader(f, delimiter=',')
+        unsorted_commits = []
+        for commit in csv_reader:
+            unsorted_commits.append(commit)
+        sorted_commits = sorted(unsorted_commits, key=lambda x: x[1])
+        pprint.pprint(sorted_commits)
     except subprocess.CalledProcessError as e:
         print('git log error')
 
