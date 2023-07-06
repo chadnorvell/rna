@@ -18,12 +18,20 @@ def get_repo_url() -> str:
     return get_config()['repo']
 
 def clone_repo(repo_url: str, tmp_dir: str) -> None:
-    subprocess.run(['git', 'clone', repo_url, tmp_dir])
+    subprocess.run(
+        ['git', 'clone', repo_url, tmp_dir],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 
 def log(tmp_dir):
     try:
+        start = f'--after="{get_start()}'
+        end = f'--before="{get_end()}'
+        log_format = '--pretty=format:\'%h,"%s",%ad\''
+        date_format = '--date=short'
         result = subprocess.run(
-            ['git', 'log'],
+            ['git', 'log', start, end, log_format, date_format],
             cwd=tmp_dir,
             capture_output=True,
             text=True,
