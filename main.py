@@ -77,6 +77,45 @@ def filter_commits(unfiltered_commits):
     return ok_commits
 
 
+# def resolve_scopes(scope):
+#     start = scope.index('{') + 1
+#     end = scope.index('}')
+#     tokens = scope[start:end]
+#     scopes = []
+#     for token in tokens.split(','):
+#         stripped_token = token.strip()
+#         scope = f'pw_{stripped_token}'
+#         scopes.append(scope)
+#     return scopes
+
+
+# def categorize_commits(unsorted_commits):
+#     data = {}
+#     for commit in unsorted_commits:
+#         commit_hash = commit[0]
+#         message = commit[1]
+#         date = commit[2]
+#         scope = parse_commit_scope(message)
+#         if should_ignore_commit(scope):
+#             continue
+#         if '{' in scope:
+#             scopes = resolve_scopes(scope)
+#         else:
+#             scopes = [scope]
+#         for s in scopes:
+#             if '/' in s:
+#                 # TODO: Avoid overwriting this var.
+#                 s = s[0:s.index('/')]
+#             if s not in data:
+#                 data[s] = []
+#             data[s].append({
+#                 'hash': commit_hash,
+#                 'message': message,
+#                 'date': date
+#             })
+#     return data
+
+
 def main():
     try:
         config = get_config()
