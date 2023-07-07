@@ -61,11 +61,7 @@ def get_commits(owner, repo, start, end):
 
 def filter_commits(unfiltered_commits):
     ok_commits = []
-    keywords = [
-        'Revert',
-        'Reland',
-        'roll'
-    ]
+    keywords = ['roll']
     for commit in unfiltered_commits:
         ok = True
         scope = parse_scope(commit['message'])
@@ -124,7 +120,10 @@ def main():
         start = config['start']
         end = config['end']
         raw_commits = get_commits(owner, repo, start, end)
+        # TODO: Filter out reverted commits?
         filtered_commits = filter_commits(raw_commits)
+        with open('www/commits.json', 'w') as f:
+            json.dump(filtered_commits, f, indent=4)
     except Exception as e:
         print('an unexpected error occurred')
         print(e)
