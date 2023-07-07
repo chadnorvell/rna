@@ -1,5 +1,6 @@
 {
-    "repo": "https://pigweed.googlesource.com/pigweed/pigweed",
+    "owner": "google",
+    "repo": "pigweed",
     "start": "2023-04-01",
     "end": "2023-06-30"
 }
