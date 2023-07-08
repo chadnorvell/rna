@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import urllib
 
 import requests
@@ -130,7 +131,7 @@ def generate_summaries(commits):
 
 def main():
     try:
-        openai.api_key = os.getenv('OPENAI_API_KEY')
+        openai.api_key = sys.argv[1]
         config = get_config()
         owner = config['owner']
         repo = config['repo']
@@ -147,4 +148,8 @@ def main():
         print(e)
 
 
-main()
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print('usage: python3 main.py <OPENAI_API_KEY>')
+        sys.exit(1)
+    main()
