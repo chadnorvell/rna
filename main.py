@@ -1,7 +1,9 @@
 import json
+import os
 import urllib
 
 import requests
+import openai
 
 
 def get_config():
@@ -10,12 +12,11 @@ def get_config():
     return config
 
 
-def parse_scope(commit_message):
-    end = commit_message.index(':')
-    return commit_message[0:end]
+# def resolve_multiscope_commits(unresolved_commits):
+#     pass
 
 
-def get_commits(owner, repo, start, end):
+def get_raw_commits(owner, repo, start, end):
     page = 1
     data = []
     done = False
@@ -43,20 +44,28 @@ def get_commits(owner, repo, start, end):
             continue
         data += json
         page += 1
-    # Weed out all the data we don't need.
-    commits = []
-    for commit in data:
-        url = commit['url']
-        sha = commit['sha']
-        message = commit['commit']['message']
-        date = commit['commit']['committer']['date']
-        commits.append({
+    return data
+
+
+def prune_commits(raw_commits):
+    pruned_commits = []
+    for raw_commit in raw_commits:
+        url = raw_commit['url']
+        sha = raw_commit['sha']
+        message = raw_commit['commit']['message']
+        date = raw_commit['commit']['committer']['date']
+        pruned_commits.append({
             'url': url,
             'sha': sha,
             'message': message,
             'date': date
         })
-    return commits
+    return pruned_commits
+
+
+def parse_scope(commit_message):
+    end = commit_message.index(':')
+    return commit_message[0:end]
 
 
 def filter_commits(unfiltered_commits):
@@ -73,57 +82,66 @@ def filter_commits(unfiltered_commits):
     return ok_commits
 
 
-# def resolve_scopes(scope):
-#     start = scope.index('{') + 1
-#     end = scope.index('}')
-#     tokens = scope[start:end]
-#     scopes = []
-#     for token in tokens.split(','):
-#         stripped_token = token.strip()
-#         scope = f'pw_{stripped_token}'
-#         scopes.append(scope)
-#     return scopes
+def generate_summaries(commits):
+    for commit in commits:
+        message = commit['message']
+        data = [
+            {
+                'role': 'system',
+                'content': (
+                    "The content of the user's message will be a Git commit. " 
+                    "Create a 1-sentence summary of the commit. "
+                    "Start the summary with a present-tense verb."
+                )
+            },
+            {
+                'role': 'user',
+                'content': message
+            }
+        ]
+        response = openai.ChatCompletion.create(
+            model='gpt-3.5-turbo',
+            messages=data,
+            max_tokens=100,
+            temperature=0
+        )
+        summary = response['choices'][0]['message']['content']
+        commit['summary'] = summary
+    return commits
 
 
-# def categorize_commits(unsorted_commits):
-#     data = {}
-#     for commit in unsorted_commits:
-#         commit_hash = commit[0]
-#         message = commit[1]
-#         date = commit[2]
-#         scope = parse_commit_scope(message)
-#         if should_ignore_commit(scope):
-#             continue
-#         if '{' in scope:
-#             scopes = resolve_scopes(scope)
-#         else:
-#             scopes = [scope]
-#         for s in scopes:
-#             if '/' in s:
-#                 # TODO: Avoid overwriting this var.
-#                 s = s[0:s.index('/')]
-#             if s not in data:
-#                 data[s] = []
-#             data[s].append({
-#                 'hash': commit_hash,
-#                 'message': message,
-#                 'date': date
-#             })
-#     return data
+# def categorize_commits(commits):
+#     for commit in commits:
+#         categories = []
+#         message = commit['message']
+#         scope = parse_scope(message)
+#         if '{' in scope:  # Multi-scope commit. Resolve to individual scopes.
+#             start = scope.index('{') + 1
+#             end = scope.index('}')
+#             tokens = scope[start:end]
+#             for token in tokens.split(','):
+#                 stripped_token = token.strip()
+#                 categories.append(f'pw_{stripped_token}')
+#         else:  # Single-scope commit.
+#             categories.append(scope)
+#         commit['categories'] = categories
+#     return commits
 
 
 def main():
     try:
+        openai.api_key = os.getenv('OPENAI_API_KEY')
         config = get_config()
         owner = config['owner']
         repo = config['repo']
         start = config['start']
         end = config['end']
-        raw_commits = get_commits(owner, repo, start, end)
-        # TODO: Filter out reverted commits?
-        filtered_commits = filter_commits(raw_commits)
+        raw_commits = get_raw_commits(owner, repo, start, end)
+        pruned_commits = prune_commits(raw_commits)
+        filtered_commits = filter_commits(pruned_commits)
+        summarized_commits = generate_summaries(filtered_commits)
         with open('www/commits.json', 'w') as f:
-            json.dump(filtered_commits, f, indent=4)
+            json.dump(summarized_commits, f, indent=4)
     except Exception as e:
         print('an unexpected error occurred')
         print(e)
