@@ -1,19 +1,23 @@
-function getCommits(owner, repo, start, end) {
+async function getCommits(owner, repo, start, end) {
   let page = 1;
   let done = false;
   while (!done) {
     let url = new URL(`https://api.github.com/repos/${owner}/${repo}/commits`);
-    const params = {
-      'since': start,
-      'until': end,
-      'per_page': 100,
-      'page': page
-    };
-    for (let key in params) {
-      url.searchParams.append(key, params[key]);
+    const params = {'since': start, 'until': end, 'per_page': 100, page};
+    for (const param in params) {
+      url.searchParams.append(param, params[param]);
     }
-    done = true;
-    console.log(url.href);
+    const headers = {
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    };
+    const response = await fetch(url.href, {'method': 'GET', headers});
+    const data = await response.json();
+    if (data.length === 0) {
+      done = true;
+      continue;
+    }
+    console.log(`Page ${page} - ${data.length} items`);
   }
 }
 
@@ -25,4 +29,6 @@ function main() {
   getCommits(owner, repo, start, end);
 }
 
-main();
+(async () => {
+  main();
+})();
