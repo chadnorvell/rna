@@ -12,6 +12,11 @@ async function getCommits(owner, repo, start, end) {
       'X-GitHub-Api-Version': '2022-11-28'
     };
     const response = await fetch(url.href, {'method': 'GET', headers});
+    if (!response.ok) {
+      // TODO: Communicate the error to the user.
+      console.error(response);
+      return;
+    }
     const data = await response.json();
     if (data.length === 0) {
       done = true;
