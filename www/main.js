@@ -13,12 +13,16 @@ function getCommits(owner, repo, start, end) {
       url.searchParams.append(key, params[key]);
     }
     done = true;
-    console.log(url);
+    console.log(url.href);
   }
 }
 
 function main() {
-  getCommits();
+  const owner = 'google';
+  const repo = 'pigweed';
+  const start = '2023-07-07T00:00:00Z';
+  const end = '2023-07-07T23:59:59Z';
+  getCommits(owner, repo, start, end);
 }
 
 main();
