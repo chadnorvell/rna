@@ -45,6 +45,25 @@ function transformRawCommits(rawCommits) {
   return transformedCommits;
 }
 
+function aggregateCommits(commits, separator) {
+  return commits.reduce((aggregated, commit) => {
+    const [category, ...subjectElements] = commit.subject.split(separator);
+    const subject = subjectElements.length > 0 ? subjectElements.join(separator).trim() : "other";
+    const revisedCommit = {...commit, subject};
+    aggregated[category] = aggregated.hasOwnProperty(category) ? [...aggregated[category], revisedCommit] : [revisedCommit];
+    return aggregated;
+  }, {});
+}
+
+function generateRestForSection(commits, level) {
+  rest = '';
+  bulletSpacing = '  '.repeat(level - 1);
+  commits.forEach(commit => {
+    rest += `${bulletSpacing}* \`${commit.subject} <${commit.url}>\`\n`;
+  });
+  return rest;
+}
+
 function generateRest(commits) {
   rest = '';
   let start = document.querySelector('#start').value;
@@ -55,9 +74,16 @@ function generateRest(commits) {
   rest += '========================================\n';
   rest += `Release notes (${start} to ${end})\n`;
   rest += '========================================\n\n';
-  commits.forEach(commit => {
-    rest += `* \`${commit.subject} <${commit.url}>\`\n`;
-  });
+
+  if (Array.isArray(commits)) {
+    rest += generateRestForSection(commits, 1);
+  } else {
+    for (const category in commits) {
+      rest += `* ${category}\n`
+      rest += generateRestForSection(commits[category], 2);
+    }
+  }
+
   return rest;
 }
 
@@ -80,8 +106,11 @@ document.querySelector('#generate').addEventListener('click', async () => {
   const repo = document.querySelector('#repo').value;
   const start = document.querySelector('#start').value;
   const end = document.querySelector('#end').value;
+  const shouldAggregate = document.querySelector('#shouldAggregate').checked;
+  const aggregationSeparator = document.querySelector('#aggregationSeparator').value;
   const rawCommits = await getRawCommits(owner, repo, start, end);
-  const commits = transformRawCommits(rawCommits);
+  const transformedCommits = transformRawCommits(rawCommits);
+  const commits = shouldAggregate ? aggregateCommits(transformedCommits, aggregationSeparator) : transformedCommits;
   document.querySelector('#json').textContent = JSON.stringify(commits, null, 4);
   document.querySelector('#rest').textContent = generateRest(commits);
 });
