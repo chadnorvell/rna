@@ -35,7 +35,7 @@ function transformRawCommits(rawCommits) {
   let transformedCommits = [];
   rawCommits.forEach(rawCommit => {
     transformedCommits.push({
-      'url': rawCommit.url,
+      'url': `https://cs.opensource.google/pigweed/pigweed/+/${rawCommit.sha}`,
       'sha': rawCommit.sha,
       'message': rawCommit.commit.message,
       'date': rawCommit.commit.committer.date,
@@ -45,12 +45,43 @@ function transformRawCommits(rawCommits) {
   return transformedCommits;
 }
 
-(async () => {
-  const owner = 'google';
-  const repo = 'pigweed';
-  const start = '2023-07-07T00:00:00Z';
-  const end = '2023-07-07T23:59:59Z';
+function generateRest(commits) {
+  rest = '';
+  let start = document.querySelector('#start').value;
+  start = start.substring(0, start.indexOf('T'));
+  let end = document.querySelector('#end').value;
+  end = end.substring(0, end.indexOf('T'));
+  rest += `.. release-notes_${start}_${end}\n\n`;
+  rest += '========================================\n';
+  rest += `Release notes (${start} to ${end})\n`;
+  rest += '========================================\n\n';
+  commits.forEach(commit => {
+    rest += `* \`${commit.subject} <${commit.url}>\`\n`;
+  });
+  return rest;
+}
+
+window.addEventListener('load', () => {
+  let start = new Date();
+  let end = new Date();
+  start.setDate(end.getDate() - 7);
+  let startYear = start.getFullYear();
+  let startMonth = (start.getMonth() + 1).toString().padStart(2, '0');
+  let startDay = start.getDate().toString().padStart(2, '0');
+  let endYear = end.getFullYear();
+  let endMonth = (end.getMonth() + 1).toString().padStart(2, '0');
+  let endDay = end.getDate().toString().padStart(2, '0');
+  document.querySelector('#start').value = `${startYear}-${startMonth}-${startDay}T00:00:00Z`;
+  document.querySelector('#end').value = `${endYear}-${endMonth}-${endDay}T23:59:59Z`;
+});
+
+document.querySelector('#generate').addEventListener('click', async () => {
+  const owner = document.querySelector('#owner').value;
+  const repo = document.querySelector('#repo').value;
+  const start = document.querySelector('#start').value;
+  const end = document.querySelector('#end').value;
   const rawCommits = await getRawCommits(owner, repo, start, end);
   const commits = transformRawCommits(rawCommits);
-  console.log(commits);
-})();
+  document.querySelector('#json').textContent = JSON.stringify(commits, null, 4);
+  document.querySelector('#rest').textContent = generateRest(commits);
+});

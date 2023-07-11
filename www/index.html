@@ -1,10 +1,24 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Home - rna</title>
+    <title>rna</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
   </head>
   <body>
-    <script src="/rna/main.js" async></script>
+    <h1>rna</h1>
+    <label for="owner">Owner:</label>
+    <input type="text" id="owner" value="google">
+    <label for="repo">Repo:</label>
+    <input type="text" id="repo" value="pigweed">
+    <label for="start">Start:</label>
+    <input type="text" id="start" value="2023-07-07T00:00:00Z">
+    <label for="end">End:</label>
+    <input type="text" id="end" value="2023-07-07T23:59:59Z">
+    <button id="generate">Generate</button>
+    <h2>reST</h2>
+    <pre><code id="rest">ReStructuredText will be rendered here...</code></pre>
+    <h2>JSON</h2>
+    <pre><code id="json">Commit data will be rendered here...</code></pre>
+    <script src="main.js" async></script>
   </body>
 </html>
