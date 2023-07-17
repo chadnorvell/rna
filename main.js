@@ -87,6 +87,38 @@ function generateRest(commits) {
   return rest;
 }
 
+function generateHtmlForSection(commits) {
+  html = '';
+  commits.forEach(commit => {
+    html += `<li><a href="${commit.url}">${commit.subject}</a></li>\n`;
+  });
+  return html;
+}
+
+function generateHtml(commits) {
+  html = '';
+  let start = document.querySelector('#start').value;
+  start = start.substring(0, start.indexOf('T'));
+  let end = document.querySelector('#end').value;
+  end = end.substring(0, end.indexOf('T'));
+  html += `<h3>Release notes (${start} to ${end})</h3>\n`;
+  html += `<ul>`
+
+  if (Array.isArray(commits)) {
+    html += generateHtmlForSection(commits);
+  } else {
+    for (const category in commits) {
+      html += `<li><strong>${category}</strong></li>\n`
+      html += `<ul>`
+      html += generateHtmlForSection(commits[category]);
+      html += `</ul>`
+    }
+  }
+
+  html += `</ul>`
+  return html;
+}
+
 window.addEventListener('load', () => {
   let start = new Date();
   let end = new Date();
@@ -113,4 +145,5 @@ document.querySelector('#generate').addEventListener('click', async () => {
   const commits = shouldAggregate ? aggregateCommits(transformedCommits, aggregationSeparator) : transformedCommits;
   document.querySelector('#json').textContent = JSON.stringify(commits, null, 4);
   document.querySelector('#rest').textContent = generateRest(commits);
+  document.querySelector('#html').innerHTML = generateHtml(commits);
 });
